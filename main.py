@@ -20,7 +20,6 @@ from torchreid.utils import (
 )
 
 
-
 def build_datamanager(args):
     if args["app"] == 'image':
         return torchreid.data.ImageDataManager(**imagedata_kwargs(args))
@@ -81,7 +80,7 @@ def build_engine(args, datamanager, model, optimizer, scheduler):
 
 def main():
 
-    # Load parameters from config file
+    # Load model configuration
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', help='path to configuration file')
     args = parser.parse_args()
