@@ -9,6 +9,7 @@ import numpy as np
 import tarfile
 import zipfile
 import copy
+import collections
 
 import torch
 
@@ -29,14 +30,18 @@ class Dataset(object):
         combineall (bool): combines train, query and gallery in a
             dataset for training.
         verbose (bool): show information.
+        val_split: proportion of people in the training set to use for the validation set
     """
     _junk_pids = [] # contains useless person IDs, e.g. background, false detections
 
     def __init__(self, train, query, gallery, transform=None, mode='train',
-                 combineall=False, verbose=True, **kwargs):
+                 combineall=False, verbose=True, val_split=0.15, **kwargs):
         self.train = train
         self.query = query
         self.gallery = gallery
+        self.val_query = []
+        self.val_gallery = []
+
         self.transform = transform
         self.mode = mode
         self.combineall = combineall
@@ -48,12 +53,19 @@ class Dataset(object):
         if self.combineall:
             self.combine_all()
 
+        if not self.combineall:
+            self.make_validation_set(val_split)
+
         if self.mode == 'train':
             self.data = self.train
         elif self.mode == 'query':
             self.data = self.query
         elif self.mode == 'gallery':
             self.data = self.gallery
+        elif self.mode == "val_query":
+            self.data = self.val_query
+        elif self.mode == "val_gallery":
+            self.data = self.val_gallery
         else:
             raise ValueError('Invalid mode. Got {}, but expected to be '
                              'one of [train | query | gallery]'.format(self.mode))
@@ -132,6 +144,41 @@ class Dataset(object):
     def show_summary(self):
         """Shows dataset statistics."""
         pass
+
+    def make_validation_set(self, val_split):
+        """Splits the training data into a train set and a validation set"""
+        all = copy.deepcopy(self.train)
+        pids = list(set([pid for _, pid, _ in all]))
+
+        assert self.num_train_pids == len(pids)
+        num_val_pids = int(val_split * self.num_train_pids) # how many pids to use for the val set
+
+        # Randomly select which pids go into the validation set
+        np.random.shuffle(pids)
+        val_pids = pids[:num_val_pids]
+        train_pids = pids[num_val_pids:]
+
+        # Update train set
+        self.train = [x for x in all if x[1] in train_pids]
+        self.num_train_pids = self.get_num_pids(self.train)
+
+        # Create val split for val_query/val_gallery
+        val_set = [x for x in all if x[1] in val_pids]
+        for pid in val_pids:
+            person = [x for x in val_set if x[1] == pid] # all images from the person with pid
+            d = collections.defaultdict(list)
+            for img in person:
+                camid = img[2]
+                d[camid].append(img)
+            # Randomly select one image from each camera (for each person) to be in val_query
+            # The rest of the images from that camera go into val_gallery
+            for cam in d.keys():
+                imgs = d[cam]
+                np.random.shuffle(imgs)
+                self.val_query.append(imgs[0])
+                self.val_gallery.extend(imgs[1:])
+
+        assert (len(self.train) + len(self.val_query) + len(self.val_gallery)) == len(all)
 
     def combine_all(self):
         """Combines train, query and gallery in a dataset for training."""
