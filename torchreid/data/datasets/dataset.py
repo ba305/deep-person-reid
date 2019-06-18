@@ -299,6 +299,8 @@ class ImageDataset(Dataset):
         num_train_pids, num_train_cams = self.parse_data(self.train)
         num_query_pids, num_query_cams = self.parse_data(self.query)
         num_gallery_pids, num_gallery_cams = self.parse_data(self.gallery)
+        num_valquery_pids, num_valquery_cams = self.parse_data(self.val_query)
+        num_valgallery_pids, num_valgallery_cams = self.parse_data(self.val_gallery)
 
         print('=> Loaded {}'.format(self.__class__.__name__))
         print('  ----------------------------------------')
@@ -307,6 +309,8 @@ class ImageDataset(Dataset):
         print('  train    | {:5d} | {:8d} | {:9d}'.format(num_train_pids, len(self.train), num_train_cams))
         print('  query    | {:5d} | {:8d} | {:9d}'.format(num_query_pids, len(self.query), num_query_cams))
         print('  gallery  | {:5d} | {:8d} | {:9d}'.format(num_gallery_pids, len(self.gallery), num_gallery_cams))
+        print('  valquery | {:5d} | {:8d} | {:9d}'.format(num_valquery_pids, len(self.val_query), num_valquery_cams))
+        print('  valgallery | {:5d} | {:8d} | {:9d}'.format(num_valgallery_pids, len(self.val_gallery), num_valgallery_cams))
         print('  ----------------------------------------')
 
 
