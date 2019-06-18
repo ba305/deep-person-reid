@@ -76,7 +76,7 @@ class Engine(object):
             rerank (bool, optional): uses person re-ranking (by Zhong et al. CVPR'17).
                 Default is False. This is only enabled when test_only=True.
         """
-        trainloader, testloader = self.datamanager.return_dataloaders()
+        trainloader, testloader, validationloader = self.datamanager.return_dataloaders()
 
         if test_only:
             self.test(

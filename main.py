@@ -82,7 +82,7 @@ def main():
 
     # Load model configuration
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', help='path to configuration file')
+    parser.add_argument('-c', '--config', required=True, help='path to configuration file')
     args = parser.parse_args()
     with open(args.config, "r") as ymlfile:
         config = yaml.load(ymlfile, Loader=yaml.FullLoader)
