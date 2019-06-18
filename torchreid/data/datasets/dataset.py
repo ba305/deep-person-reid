@@ -10,6 +10,7 @@ import tarfile
 import zipfile
 import copy
 import collections
+import math
 
 import torch
 
@@ -149,18 +150,28 @@ class Dataset(object):
         """Splits the training data into a train set and a validation set"""
         all = copy.deepcopy(self.train)
         pids = list(set([pid for _, pid, _ in all]))
-
         assert self.num_train_pids == len(pids)
-        num_val_pids = int(val_split * self.num_train_pids) # how many pids to use for the val set
 
-        # Randomly select which pids go into the validation set
-        np.random.shuffle(pids)
-        val_pids = pids[:num_val_pids]
-        train_pids = pids[num_val_pids:]
+        train_pids = []
 
-        # Update train set
-        self.train = [x for x in all if x[1] in train_pids]
-        self.num_train_pids = self.get_num_pids(self.train)
+        # Some people don't have enough images to be useful for the validation set.
+        # Let's take anyone in val_set who does NOT have at least 2 images from at
+        # least 2 cameras, and put them in the train set
+        for pid in pids:
+            person = [x for x in all if x[1] == pid]
+            camerasCapturedIn = [x[2] for x in person]
+            counts = collections.Counter(camerasCapturedIn).values()
+            if len([x for x in counts if x >= 2]) < 2:
+                train_pids.append(pid)
+        remaining_pids = [x for x in pids if x not in train_pids]
+
+        # Calculate how many pids to use in the val set, according to val_split
+        num_val_pids = math.floor(val_split * self.num_train_pids)
+
+        # Randomly select which of the remaining pids go into the validation set
+        np.random.shuffle(remaining_pids)
+        val_pids = remaining_pids[:num_val_pids]
+        train_pids.extend(remaining_pids[num_val_pids:])
 
         # Create val split for val_query/val_gallery
         val_set = [x for x in all if x[1] in val_pids]
@@ -177,6 +188,10 @@ class Dataset(object):
                 np.random.shuffle(imgs)
                 self.val_query.append(imgs[0])
                 self.val_gallery.extend(imgs[1:])
+
+        # Update train set
+        self.train = [x for x in all if x[1] in train_pids]
+        self.num_train_pids = self.get_num_pids(self.train)
 
         assert (len(self.train) + len(self.val_query) + len(self.val_gallery)) == len(all)
 
