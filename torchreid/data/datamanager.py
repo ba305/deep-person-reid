@@ -61,8 +61,8 @@ class DataManager(object):
         return self._num_train_cams
 
     def return_dataloaders(self):
-        """Returns trainloader and testloader."""
-        return self.trainloader, self.testloader
+        """Returns trainloader, testloader, and validationloader."""
+        return self.trainloader, self.testloader, self.validationloader
 
     def return_testdataset_by_name(self, name):
         """Returns query and gallery of a test dataset, each containing
@@ -117,20 +117,22 @@ class ImageDataManager(DataManager):
     def __init__(self, root='', sources=None, targets=None, height=256, width=128, random_erase=False,
                  color_jitter=False, color_aug=False, use_cpu=False, split_id=0, combineall=False,
                  batch_size=32, workers=4, num_instances=4, train_sampler='',
-                 cuhk03_labeled=False, cuhk03_classic_split=False, market1501_500k=False):
-        
+                 cuhk03_labeled=False, cuhk03_classic_split=False, market1501_500k=False, val_split=0.15):
+
         super(ImageDataManager, self).__init__(sources=sources, targets=targets, height=height, width=width,
                                                random_erase=random_erase, color_jitter=color_jitter,
                                                color_aug=color_aug, use_cpu=use_cpu)
-        
+
+        ### Training data
         print('=> Loading train (source) dataset')
-        trainset = []  
+        trainset = []
         for name in self.sources:
             trainset_ = init_image_dataset(
                 name,
                 transform=self.transform_tr,
                 mode='train',
                 combineall=combineall,
+                val_split=val_split,
                 root=root,
                 split_id=split_id,
                 cuhk03_labeled=cuhk03_labeled,
@@ -159,6 +161,77 @@ class ImageDataManager(DataManager):
             drop_last=True
         )
 
+        ### Validation data
+        print('=> Loading validation dataset')
+        self.validationloader = {name: {'val_query': None, 'val_gallery': None} for name in self.sources}
+        self.validationdataset = {name: {'val_query': None, 'val_gallery':None} for name in self.sources}
+
+        for name in self.sources:
+            # build val_query loader
+            val_queryset = init_image_dataset(
+                name,
+                transform=self.transform_te,
+                mode='val_query',
+                combineall=combineall,
+                val_split=val_split,
+                root=root,
+                split_id=split_id,
+                cuhk03_labeled=cuhk03_labeled,
+                cuhk03_classic_split=cuhk03_classic_split,
+                market1501_500k=market1501_500k
+            )
+
+            valquery_sampler = build_train_sampler(    # val loader uses same sampler as train set
+                val_queryset.val_query, train_sampler,
+                batch_size=batch_size,
+                num_instances=num_instances
+            )
+
+            self.validationloader[name]['val_query'] = torch.utils.DataLoader(
+                val_queryset,
+                sampler=valquery_sampler,
+                batch_size=batch_size,
+                shuffle=False,
+                num_workers=workers,
+                pin_memory=self.use_gpu,
+                drop_last=False
+            )
+
+            # build val_gallery loader
+            val_galleryset = init_image_dataset(
+                name,
+                transform=self.transform_te,
+                mode='val_gallery',
+                combineall=combineall,
+                val_split=val_split,
+                verbose=False,
+                root=root,
+                split_id=split_id,
+                cuhk03_labeled=cuhk03_labeled,
+                cuhk03_classic_split=cuhk03_classic_split,
+                market1501_500k=market1501_500k
+            )
+
+            valgallery_sampler = build_train_sampler(  # val loader uses same sampler as train set
+                val_galleryset.val_gallery, train_sampler,
+                batch_size=batch_size,
+                num_instances=num_instances
+            )
+
+            self.validationloader[name]['val_gallery'] = torch.utils.data.DataLoader(
+                val_galleryset,
+                sampler=valgallery_sampler,
+                batch_size=batch_size,
+                shuffle=False,
+                num_workers=workers,
+                pin_memory=self.use_gpu,
+                drop_last=False
+            )
+
+            self.validationdataset[name]['val_query'] = val_queryset.val_query
+            self.validationdataset[name]['val_gallery'] = val_galleryset.val_gallery
+
+        ### Test data
         print('=> Loading test (target) dataset')
         self.testloader = {name: {'query': None, 'gallery': None} for name in self.targets}
         self.testdataset = {name: {'query': None, 'gallery': None} for name in self.targets}
@@ -170,6 +243,7 @@ class ImageDataManager(DataManager):
                 transform=self.transform_te,
                 mode='query',
                 combineall=combineall,
+                val_split=val_split,
                 root=root,
                 split_id=split_id,
                 cuhk03_labeled=cuhk03_labeled,
@@ -191,6 +265,7 @@ class ImageDataManager(DataManager):
                 transform=self.transform_te,
                 mode='gallery',
                 combineall=combineall,
+                val_split=val_split,
                 verbose=False,
                 root=root,
                 split_id=split_id,
@@ -267,13 +342,13 @@ class VideoDataManager(DataManager):
                  color_jitter=False, color_aug=False, use_cpu=False, split_id=0, combineall=False,
                  batch_size=3, workers=4, num_instances=4, train_sampler=None,
                  seq_len=15, sample_method='evenly'):
-        
+
         super(VideoDataManager, self).__init__(sources=sources, targets=targets, height=height, width=width,
                                                random_erase=random_erase, color_jitter=color_jitter,
                                                color_aug=color_aug, use_cpu=use_cpu)
 
         print('=> Loading train (source) dataset')
-        trainset = []  
+        trainset = []
         for name in self.sources:
             trainset_ = init_video_dataset(
                 name,
