@@ -189,10 +189,18 @@ class Dataset(object):
                 self.val_query.append(imgs[0])
                 self.val_gallery.extend(imgs[1:])
 
-        # Update train set
-        self.train = [x for x in all if x[1] in train_pids]
-        self.num_train_pids = self.get_num_pids(self.train)
+        #### Update train set
+        assert len(train_pids) == len(set(train_pids))
 
+        # Rename pids so that they start at 0 and go up by 1
+        pid2label = {pid: label for label, pid in enumerate(train_pids)}
+        self.train = []
+        for path, pid, camid in all:
+            if pid in train_pids:
+                pid = pid2label[pid]
+                self.train.append((path, pid, camid))
+
+        self.num_train_pids = self.get_num_pids(self.train)
         assert (len(self.train) + len(self.val_query) + len(self.val_gallery)) == len(all)
 
     def combine_all(self):
