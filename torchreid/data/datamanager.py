@@ -224,6 +224,9 @@ class ImageDataManager(DataManager):
         self.testloader = {name: {'query': None, 'gallery': None} for name in self.targets}
         self.testdataset = {name: {'query': None, 'gallery': None} for name in self.targets}
 
+        # Note that the train/val split for the datasets below will be irrelevant
+        # since we are only using the test set. So, I am setting verbose=False because
+        # otherwise the printed information is confusing
         for name in self.targets:
             # build query loader
             queryset = init_image_dataset(
@@ -232,6 +235,7 @@ class ImageDataManager(DataManager):
                 mode='query',
                 combineall=combineall,
                 val_split=val_split,
+                verbose=False,
                 root=root,
                 split_id=split_id,
                 cuhk03_labeled=cuhk03_labeled,
