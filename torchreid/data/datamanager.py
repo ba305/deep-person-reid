@@ -3,6 +3,7 @@ from __future__ import print_function
 from __future__ import division
 
 import torch
+import copy
 
 from torchreid.data.sampler import build_train_sampler
 from torchreid.data.transforms import build_transforms
@@ -166,70 +167,57 @@ class ImageDataManager(DataManager):
         self.validationloader = {name: {'val_query': None, 'val_gallery': None} for name in self.sources}
         self.validationdataset = {name: {'val_query': None, 'val_gallery':None} for name in self.sources}
 
-        for name in self.sources:
-            # build val_query loader
-            val_queryset = init_image_dataset(
-                name,
-                transform=self.transform_te,
-                mode='val_query',
-                combineall=combineall,
-                val_split=val_split,
-                root=root,
-                split_id=split_id,
-                cuhk03_labeled=cuhk03_labeled,
-                cuhk03_classic_split=cuhk03_classic_split,
-                market1501_500k=market1501_500k
-            )
+        # Copy trainset to use for the validationset (to keep the same train/val split)
+        val_queryset = copy.deepcopy(trainset)
+        val_galleryset = copy.deepcopy(trainset)
 
-            valquery_sampler = build_train_sampler(    # val loader uses same sampler as train set
-                val_queryset.val_query, train_sampler,
-                batch_size=batch_size,
-                num_instances=num_instances
-            )
+        # Change properties of the copied datasets
+        val_queryset.transform = self.transform_te
+        val_galleryset.transform = self.transform_te
 
-            self.validationloader[name]['val_query'] = torch.utils.DataLoader(
-                val_queryset,
-                sampler=valquery_sampler,
-                batch_size=batch_size,
-                shuffle=False,
-                num_workers=workers,
-                pin_memory=self.use_gpu,
-                drop_last=False
-            )
+        val_queryset.mode = 'val_query'
+        val_galleryset.mode = 'val_gallery'
 
-            # build val_gallery loader
-            val_galleryset = init_image_dataset(
-                name,
-                transform=self.transform_te,
-                mode='val_gallery',
-                combineall=combineall,
-                val_split=val_split,
-                verbose=False,
-                root=root,
-                split_id=split_id,
-                cuhk03_labeled=cuhk03_labeled,
-                cuhk03_classic_split=cuhk03_classic_split,
-                market1501_500k=market1501_500k
-            )
+        val_queryset.data = val_queryset.val_query
+        val_galleryset.data = val_galleryset.val_gallery
 
-            valgallery_sampler = build_train_sampler(  # val loader uses same sampler as train set
-                val_galleryset.val_gallery, train_sampler,
-                batch_size=batch_size,
-                num_instances=num_instances
-            )
+        # Create samplers
+        valquery_sampler = build_train_sampler(  # val loader uses same sampler as train set
+            val_queryset.val_query, train_sampler,
+            batch_size=batch_size,
+            num_instances=num_instances
+        )
 
-            self.validationloader[name]['val_gallery'] = torch.utils.data.DataLoader(
-                val_galleryset,
-                sampler=valgallery_sampler,
-                batch_size=batch_size,
-                shuffle=False,
-                num_workers=workers,
-                pin_memory=self.use_gpu,
-                drop_last=False
-            )
+        valgallery_sampler = build_train_sampler(  # val loader uses same sampler as train set
+            val_galleryset.val_gallery, train_sampler,
+            batch_size=batch_size,
+            num_instances=num_instances
+        )
 
-            self.validationdataset[name]['val_query'] = val_queryset.val_query
-            self.validationdataset[name]['val_gallery'] = val_galleryset.val_gallery
+        # Create dataloaders
+        self.validationloader[name]['val_query'] = torch.utils.data.DataLoader(
+            val_queryset,
+            sampler=valquery_sampler,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=workers,
+            pin_memory=self.use_gpu,
+            drop_last=False
+        )
+
+        self.validationloader[name]['val_gallery'] = torch.utils.data.DataLoader(
+            val_galleryset,
+            sampler=valgallery_sampler,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=workers,
+            pin_memory=self.use_gpu,
+            drop_last=False
+        )
+
+        # Note: may not need these two lines below (delete later?)
+        self.validationdataset[name]['val_query'] = val_queryset.val_query
+        self.validationdataset[name]['val_gallery'] = val_galleryset.val_gallery
 
         ### Test data
         print('=> Loading test (target) dataset')
