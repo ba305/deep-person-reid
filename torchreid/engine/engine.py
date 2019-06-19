@@ -80,6 +80,7 @@ class Engine(object):
 
         if test_only:
             self.test(
+                "test",
                 0,
                 testloader,
                 dist_metric=dist_metric,
@@ -101,8 +102,9 @@ class Engine(object):
             
             if (epoch+1)>=start_eval and eval_freq>0 and (epoch+1)%eval_freq==0 and (epoch+1)!=max_epoch:
                 rank1 = self.test(
+                    "validation",
                     epoch,
-                    testloader,
+                    validationloader,
                     dist_metric=dist_metric,
                     normalize_feature=normalize_feature,
                     visrank=visrank,
@@ -116,6 +118,7 @@ class Engine(object):
         if max_epoch > 0:
             print('=> Final test')
             rank1 = self.test(
+                "test",
                 epoch,
                 testloader,
                 dist_metric=dist_metric,
@@ -148,7 +151,7 @@ class Engine(object):
         """
         raise NotImplementedError
 
-    def test(self, epoch, testloader, dist_metric='euclidean', normalize_feature=False,
+    def test(self, mode, epoch, testloader, dist_metric='euclidean', normalize_feature=False,
              visrank=False, visrank_topk=20, save_dir='', use_metric_cuhk03=False,
              ranks=[1, 5, 10, 20], rerank=False):
         r"""Tests model on target datasets.
@@ -165,6 +168,7 @@ class Engine(object):
             but not a must. Please refer to the source code for more details.
 
         Args:
+            mode (str): which mode to performing testing in ("validation" or "test")
             epoch (int): current epoch.
             testloader (dict): dictionary containing
                 {dataset_name: 'query': queryloader, 'gallery': galleryloader}.
@@ -189,22 +193,40 @@ class Engine(object):
         for name in targets:
             domain = 'source' if name in self.datamanager.sources else 'target'
             print('##### Evaluating {} ({}) #####'.format(name, domain))
-            queryloader = testloader[name]['query']
-            galleryloader = testloader[name]['gallery']
-            rank1 = self._evaluate(
-                epoch,
-                dataset_name=name,
-                queryloader=queryloader,
-                galleryloader=galleryloader,
-                dist_metric=dist_metric,
-                normalize_feature=normalize_feature,
-                visrank=visrank,
-                visrank_topk=visrank_topk,
-                save_dir=save_dir,
-                use_metric_cuhk03=use_metric_cuhk03,
-                ranks=ranks,
-                rerank=rerank
-            )
+
+            if mode == "test":
+                queryloader = testloader[name]['query']
+                galleryloader = testloader[name]['gallery']
+
+                rank1 = self._evaluate(
+                    epoch,
+                    dataset_name=name,
+                    queryloader=queryloader,
+                    galleryloader=galleryloader,
+                    dist_metric=dist_metric,
+                    normalize_feature=normalize_feature,
+                    visrank=visrank,
+                    visrank_topk=visrank_topk,
+                    save_dir=save_dir,
+                    use_metric_cuhk03=use_metric_cuhk03,
+                    ranks=ranks,
+                    rerank=rerank
+                )
+
+            elif mode == "validation":
+                rank1 = self._evaluate_for_validation(
+                    epoch,
+                    dataset_name=name,
+                    validationloader=testloader,
+                    dist_metric=dist_metric,
+                    normalize_feature=normalize_feature,
+                    visrank=visrank,
+                    visrank_topk=visrank_topk,
+                    save_dir=save_dir,
+                    use_metric_cuhk03=use_metric_cuhk03,
+                    ranks=ranks,
+                    rerank=rerank
+                )
         
         return rank1
 
@@ -296,6 +318,67 @@ class Engine(object):
             )
 
         return cmc[0]
+
+    @torch.no_grad()
+    def _evaluate_for_validation(self, epoch, dataset_name='', validationloader=None,
+                  dist_metric='euclidean', normalize_feature=False, visrank=False,
+                  visrank_topk=20, save_dir='', use_metric_cuhk03=False, ranks=[1, 5, 10, 20],
+                  rerank=False):
+
+        losses_t = AverageMeter()
+        losses_x = AverageMeter()
+        losses = AverageMeter()
+        accs = AverageMeter()
+        batch_time = AverageMeter()
+        data_time = AverageMeter()
+
+        self.model.eval()
+
+        print('Checking performance on validation set ...')
+
+        end = time.time()
+        for batch_idx, data in enumerate(validationloader):
+            data_time.update(time.time() - end)
+
+            imgs, pids = self._parse_data_for_train(data)
+            if self.use_gpu:
+                imgs = imgs.cuda()
+                pids = pids.cuda()
+
+            outputs, features = self.model(imgs)
+            loss_t = self._compute_loss(self.criterion_t, features, pids)
+            loss_x = self._compute_loss(self.criterion_x, outputs, pids)
+            loss = self.weight_t * loss_t + self.weight_x * loss_x
+
+            batch_time.update(time.time() - end)
+
+            losses_t.update(loss_t.item(), pids.size(0))
+            losses_x.update(loss_x.item(), pids.size(0))
+            losses.update(loss.item(), pids.size(0))
+            accs.update(metrics.accuracy(outputs, pids)[0].item())
+
+            print('Validation results:')
+            # estimate remaining time
+            num_batches = len(validationloader)
+            print('Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                  'Loss_t {loss_t.val:.4f} ({loss_t.avg:.4f})\t'
+                  'Loss_x {loss_x.val:.4f} ({loss_x.avg:.4f})\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  'Acc {acc.val:.2f} ({acc.avg:.2f})\t'
+                  'Lr {lr:.6f}'.format(
+                  batch_time=batch_time,
+                  data_time=data_time,
+                  loss_t=losses_t,
+                  loss_x=losses_x,
+                  loss = losses,
+                  acc=accs,
+                  lr=self.optimizer.param_groups[0]['lr']
+                )
+            )
+
+            end = time.time()
+
 
     def _compute_loss(self, criterion, outputs, targets):
         if isinstance(outputs, (tuple, list)):
