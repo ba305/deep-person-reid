@@ -182,13 +182,13 @@ class ImageDataManager(DataManager):
         val_galleryset.data = val_galleryset.val_gallery
 
         # Create samplers
-        valquery_sampler = build_train_sampler(  # val loader uses same sampler as train set
+        valquery_sampler = build_train_sampler(  # val loader uses same type of sampler as train set
             val_queryset.val_query, train_sampler,
             batch_size=batch_size,
             num_instances=num_instances
         )
 
-        valgallery_sampler = build_train_sampler(  # val loader uses same sampler as train set
+        valgallery_sampler = build_train_sampler(  # val loader uses same type of sampler as train set
             val_galleryset.val_gallery, train_sampler,
             batch_size=batch_size,
             num_instances=num_instances
