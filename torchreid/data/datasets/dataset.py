@@ -148,8 +148,8 @@ class Dataset(object):
 
     def make_validation_set(self, val_split):
         """Splits the training data into a train set and a validation set"""
-        all = copy.deepcopy(self.train)
-        pids = list(set([pid for _, pid, _ in all]))
+        alldata = copy.deepcopy(self.train)
+        pids = list(set([pid for _, pid, _ in alldata]))
         assert self.num_train_pids == len(pids)
 
         train_pids = []
@@ -158,7 +158,7 @@ class Dataset(object):
         # Let's take anyone in val_set who does NOT have at least 2 images from at
         # least 2 cameras, and put them in the train set
         for pid in pids:
-            person = [x for x in all if x[1] == pid]
+            person = [x for x in alldata if x[1] == pid]
             camerasCapturedIn = [x[2] for x in person]
             counts = collections.Counter(camerasCapturedIn).values()
             if len([x for x in counts if x >= 2]) < 2:
@@ -174,7 +174,7 @@ class Dataset(object):
         train_pids.extend(remaining_pids[num_val_pids:])
 
         # Create val split for val_query/val_gallery
-        val_set = [x for x in all if x[1] in val_pids]
+        val_set = [x for x in alldata if x[1] in val_pids]
         for pid in val_pids:
             person = [x for x in val_set if x[1] == pid] # all images from the person with pid
             d = collections.defaultdict(list)
@@ -195,13 +195,13 @@ class Dataset(object):
         # Rename pids so that they start at 0 and go up by 1
         pid2label = {pid: label for label, pid in enumerate(train_pids)}
         self.train = []
-        for path, pid, camid in all:
+        for path, pid, camid in alldata:
             if pid in train_pids:
                 pid = pid2label[pid]
                 self.train.append((path, pid, camid))
 
         self.num_train_pids = self.get_num_pids(self.train)
-        assert (len(self.train) + len(self.val_query) + len(self.val_gallery)) == len(all)
+        assert (len(self.train) + len(self.val_query) + len(self.val_gallery)) == len(alldata)
 
     def combine_all(self):
         """Combines train, query and gallery in a dataset for training."""
