@@ -188,13 +188,13 @@ class Engine(object):
             rerank (bool, optional): uses person re-ranking (by Zhong et al. CVPR'17).
                 Default is False.
         """
-        targets = list(testloader.keys())
+        if mode == "test":
+            targets = list(testloader.keys())
         
-        for name in targets:
-            domain = 'source' if name in self.datamanager.sources else 'target'
-            print('##### Evaluating {} ({}) #####'.format(name, domain))
+            for name in targets:
+                domain = 'source' if name in self.datamanager.sources else 'target'
+                print('##### Evaluating {} ({}) #####'.format(name, domain))
 
-            if mode == "test":
                 queryloader = testloader[name]['query']
                 galleryloader = testloader[name]['gallery']
 
@@ -213,20 +213,10 @@ class Engine(object):
                     rerank=rerank
                 )
 
-            elif mode == "validation":
-                rank1 = self._evaluate_for_validation(
-                    epoch,
-                    dataset_name=name,
-                    validationloader=testloader,
-                    dist_metric=dist_metric,
-                    normalize_feature=normalize_feature,
-                    visrank=visrank,
-                    visrank_topk=visrank_topk,
-                    save_dir=save_dir,
-                    use_metric_cuhk03=use_metric_cuhk03,
-                    ranks=ranks,
-                    rerank=rerank
-                )
+        elif mode == "validation":
+            rank1 = self._evaluate_for_validation(
+                validationloader=testloader
+            )
         
         return rank1
 
@@ -320,10 +310,7 @@ class Engine(object):
         return cmc[0]
 
     @torch.no_grad()
-    def _evaluate_for_validation(self, epoch, dataset_name='', validationloader=None,
-                  dist_metric='euclidean', normalize_feature=False, visrank=False,
-                  visrank_topk=20, save_dir='', use_metric_cuhk03=False, ranks=[1, 5, 10, 20],
-                  rerank=False):
+    def _evaluate_for_validation(self, validationloader=None):
 
         losses_t = AverageMeter()
         losses_x = AverageMeter()
@@ -344,7 +331,7 @@ class Engine(object):
             if self.use_gpu:
                 imgs = imgs.cuda()
                 pids = pids.cuda()
-
+            import pdb; pdb.set_trace()
             outputs, features = self.model(imgs)
             loss_t = self._compute_loss(self.criterion_t, features, pids)
             loss_x = self._compute_loss(self.criterion_x, outputs, pids)
