@@ -87,7 +87,9 @@ def build_train_sampler(data_source, train_sampler, batch_size=32, num_instances
     if train_sampler == 'RandomIdentitySampler':
         sampler = RandomIdentitySampler(data_source, batch_size, num_instances)
     
-    else:
+    elif train_sampler == "RandomSampler":
         sampler = RandomSampler(data_source)
+    else:
+        raise Exception("Please select a valid sampler")
 
     return sampler
