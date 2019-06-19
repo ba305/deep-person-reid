@@ -146,7 +146,7 @@ class ImageDataManager(DataManager):
         self._num_train_pids = trainset.num_train_pids
         self._num_train_cams = trainset.num_train_cams
 
-        train_sampler = build_train_sampler(
+        training_sampler = build_train_sampler(
             trainset.train, train_sampler,
             batch_size=batch_size,
             num_instances=num_instances
@@ -154,7 +154,7 @@ class ImageDataManager(DataManager):
 
         self.trainloader = torch.utils.data.DataLoader(
             trainset,
-            sampler=train_sampler,
+            sampler=training_sampler,
             batch_size=batch_size,
             shuffle=False,
             num_workers=workers,
@@ -358,7 +358,7 @@ class VideoDataManager(DataManager):
         self._num_train_pids = trainset.num_train_pids
         self._num_train_cams = trainset.num_train_cams
 
-        train_sampler = build_train_sampler(
+        training_sampler = build_train_sampler(
             trainset.train, train_sampler,
             batch_size=batch_size,
             num_instances=num_instances
@@ -366,7 +366,7 @@ class VideoDataManager(DataManager):
 
         self.trainloader = torch.utils.data.DataLoader(
             trainset,
-            sampler=train_sampler,
+            sampler=training_sampler,
             batch_size=batch_size,
             shuffle=False,
             num_workers=workers,
