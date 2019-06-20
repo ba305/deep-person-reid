@@ -25,7 +25,9 @@ def imagedata_kwargs(parsed_args):
         'cuhk03_labeled': parsed_args["cuhk03_labeled"],
         'cuhk03_classic_split': parsed_args["cuhk03_classic_split"],
         'market1501_500k': parsed_args["market1501_500k"],
-        'val_split': parsed_args["val_split"]
+        # new
+        'val_split': parsed_args["val_split"],
+        'seed': parsed_args["seed"]
     }
 
 
@@ -49,7 +51,9 @@ def videodata_kwargs(parsed_args):
         # video
         'seq_len': parsed_args["seq_len"],
         'sample_method': parsed_args["sample_method"],
-        'val_split': parsed_args["val_split"]
+        # new
+        'val_split': parsed_args["val_split"],
+        'seed': parsed_args["seed"]
     }
 
 
