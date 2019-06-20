@@ -236,7 +236,7 @@ class Engine(object):
             if self.use_gpu:
                 imgs = imgs.cuda()
             end = time.time()
-            features = self._extract_features(imgs)
+            _, features = self._extract_features(imgs)
             batch_time.update(time.time() - end)
             features = features.data.cpu()
             qf.append(features)
@@ -255,7 +255,7 @@ class Engine(object):
             if self.use_gpu:
                 imgs = imgs.cuda()
             end = time.time()
-            features = self._extract_features(imgs)
+            _, features = self._extract_features(imgs)
             batch_time.update(time.time() - end)
             features = features.data.cpu()
             gf.append(features)
@@ -331,7 +331,6 @@ class Engine(object):
             if self.use_gpu:
                 imgs = imgs.cuda()
                 pids = pids.cuda()
-            import pdb; pdb.set_trace()
             outputs, features = self.model(imgs)
             loss_t = self._compute_loss(self.criterion_t, features, pids)
             loss_x = self._compute_loss(self.criterion_x, outputs, pids)
