@@ -313,9 +313,6 @@ class Engine(object):
     def _evaluate_for_validation(self, validationloader=None):
 
         losses_t = AverageMeter()
-        losses_x = AverageMeter()
-        losses = AverageMeter()
-        accs = AverageMeter()
         batch_time = AverageMeter()
         data_time = AverageMeter()
 
@@ -326,45 +323,31 @@ class Engine(object):
         end = time.time()
         for batch_idx, data in enumerate(validationloader):
             data_time.update(time.time() - end)
-
             imgs, pids = self._parse_data_for_train(data)
             if self.use_gpu:
                 imgs = imgs.cuda()
                 pids = pids.cuda()
-            outputs, features = self.model(imgs)
+            features = self.model(imgs)
             loss_t = self._compute_loss(self.criterion_t, features, pids)
-            loss_x = self._compute_loss(self.criterion_x, outputs, pids)
-            loss = self.weight_t * loss_t + self.weight_x * loss_x
 
             batch_time.update(time.time() - end)
 
             losses_t.update(loss_t.item(), pids.size(0))
-            losses_x.update(loss_x.item(), pids.size(0))
-            losses.update(loss.item(), pids.size(0))
-            accs.update(metrics.accuracy(outputs, pids)[0].item())
 
             print('Validation results:')
             # estimate remaining time
-            num_batches = len(validationloader)
             print('Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
                   'Loss_t {loss_t.val:.4f} ({loss_t.avg:.4f})\t'
-                  'Loss_x {loss_x.val:.4f} ({loss_x.avg:.4f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Acc {acc.val:.2f} ({acc.avg:.2f})\t'
                   'Lr {lr:.6f}'.format(
                   batch_time=batch_time,
                   data_time=data_time,
                   loss_t=losses_t,
-                  loss_x=losses_x,
-                  loss = losses,
-                  acc=accs,
                   lr=self.optimizer.param_groups[0]['lr']
                 )
             )
 
             end = time.time()
-
 
     def _compute_loss(self, criterion, outputs, targets):
         if isinstance(outputs, (tuple, list)):
