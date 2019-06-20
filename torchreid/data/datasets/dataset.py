@@ -66,7 +66,7 @@ class Dataset(object):
             self.data = self.validation
         else:
             raise ValueError('Invalid mode. Got {}, but expected to be '
-                             'one of [train | query | gallery]'.format(self.mode))
+                             'one of [train | query | gallery | validation]'.format(self.mode))
 
         if self.verbose:
             self.show_summary()
@@ -158,10 +158,16 @@ class Dataset(object):
         train_pids = pids[num_val_pids:]
 
         # Create validation set
-        self.validation = [x for x in alldata if x[1] in val_pids]
+        # Relabel pids so that they start at 0 and go up by 1
+        pid2label = {pid: label for label, pid in enumerate(val_pids)}
+        self.validation = []
+        for path, pid, camid in alldata:
+            if pid in val_pids:
+                pid = pid2label[pid]
+                self.validation.append((path, pid, camid))
 
         # Create train set
-        # Rename pids so that they start at 0 and go up by 1
+        # Relabel pids so that they start at 0 and go up by 1
         pid2label = {pid: label for label, pid in enumerate(train_pids)}
         self.train = []
         for path, pid, camid in alldata:
