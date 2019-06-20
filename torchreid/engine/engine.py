@@ -313,16 +313,12 @@ class Engine(object):
     def _evaluate_for_validation(self, validationloader=None):
 
         losses_t = AverageMeter()
-        batch_time = AverageMeter()
-        data_time = AverageMeter()
 
         self.model.eval()
 
         print('Checking performance on validation set ...')
 
-        end = time.time()
         for batch_idx, data in enumerate(validationloader):
-            data_time.update(time.time() - end)
             imgs, pids = self._parse_data_for_train(data)
             if self.use_gpu:
                 imgs = imgs.cuda()
@@ -330,24 +326,18 @@ class Engine(object):
             features = self.model(imgs)
             loss_t = self._compute_loss(self.criterion_t, features, pids)
 
-            batch_time.update(time.time() - end)
-
             losses_t.update(loss_t.item(), pids.size(0))
 
-            print('Validation results:')
-            # estimate remaining time
-            print('Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Loss_t {loss_t.val:.4f} ({loss_t.avg:.4f})\t'
-                  'Lr {lr:.6f}'.format(
-                  batch_time=batch_time,
-                  data_time=data_time,
-                  loss_t=losses_t,
-                  lr=self.optimizer.param_groups[0]['lr']
-                )
+        print()
+        print('Validation results:')
+        print('Loss_t {loss_t.avg:.4f}\t'
+              'Lr {lr:.6f}'.format(
+              loss_t=losses_t,
+              lr=self.optimizer.param_groups[0]['lr']
             )
+        )
+        print()
 
-            end = time.time()
 
     def _compute_loss(self, criterion, outputs, targets):
         if isinstance(outputs, (tuple, list)):
