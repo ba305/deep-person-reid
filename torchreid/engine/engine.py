@@ -236,7 +236,7 @@ class Engine(object):
             if self.use_gpu:
                 imgs = imgs.cuda()
             end = time.time()
-            _, features = self._extract_features(imgs)
+            features = self._extract_features(imgs)
             batch_time.update(time.time() - end)
             features = features.data.cpu()
             qf.append(features)
@@ -255,7 +255,7 @@ class Engine(object):
             if self.use_gpu:
                 imgs = imgs.cuda()
             end = time.time()
-            _, features = self._extract_features(imgs)
+            features = self._extract_features(imgs)
             batch_time.update(time.time() - end)
             features = features.data.cpu()
             gf.append(features)
