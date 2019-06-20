@@ -101,7 +101,7 @@ class Engine(object):
             self.train(epoch, max_epoch, trainloader, fixbase_epoch, open_layers, print_freq)
             
             if (epoch+1)>=start_eval and eval_freq>0 and (epoch+1)%eval_freq==0 and (epoch+1)!=max_epoch:
-                rank1 = self.test(
+                val_loss = self.test(
                     "validation",
                     epoch,
                     validationloader,
@@ -113,7 +113,7 @@ class Engine(object):
                     use_metric_cuhk03=use_metric_cuhk03,
                     ranks=ranks
                 )
-                self._save_checkpoint(epoch, rank1, save_dir)
+                self._save_checkpoint(epoch, val_loss, save_dir)
 
         if max_epoch > 0:
             print('=> Final test')
@@ -212,13 +212,14 @@ class Engine(object):
                     ranks=ranks,
                     rerank=rerank
                 )
+            return rank1
 
         elif mode == "validation":
-            rank1 = self._evaluate_for_validation(
+            val_loss = self._evaluate_for_validation(
                 validationloader=testloader
             )
+            return val_loss
         
-        return rank1
 
     @torch.no_grad()
     def _evaluate(self, epoch, dataset_name='', queryloader=None, galleryloader=None,
@@ -337,6 +338,7 @@ class Engine(object):
             )
         )
         print()
+        return losses_t.avg
 
 
     def _compute_loss(self, criterion, outputs, targets):
