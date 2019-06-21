@@ -145,6 +145,3 @@ class ImageTripletEngine(engine.Engine):
                 )
             
             end = time.time()
-
-        if self.scheduler is not None:
-            self.scheduler.step()

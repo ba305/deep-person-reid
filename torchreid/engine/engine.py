@@ -115,6 +115,13 @@ class Engine(object):
                 )
                 self._save_checkpoint(epoch, val_loss, save_dir)
 
+            # Update learning rate scheduler
+            if self.scheduler is not None:
+                if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                    self.scheduler.step(val_loss)
+                else:
+                    self.scheduler.step()
+
         if max_epoch > 0:
             print('=> Final test')
             rank1 = self.test(

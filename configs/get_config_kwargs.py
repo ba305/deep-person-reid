@@ -78,7 +78,10 @@ def lr_scheduler_kwargs(parsed_args):
     return {
         'lr_scheduler': parsed_args["lr_scheduler"],
         'stepsize': parsed_args["stepsize"],
-        'gamma': parsed_args["gamma"]
+        'gamma': parsed_args["gamma"],
+        'lr_sched_patience': parsed_args["lr_sched_patience"],
+        'lr_sched_threshold': parsed_args["lr_sched_threshold"],
+        'lr_sched_cooldown': parsed_args["lr_sched_cooldown"]
     }
 
 
