@@ -97,6 +97,8 @@ class Engine(object):
         time_start = time.time()
         print('=> Start training')
 
+        best_epoch = 0
+        best_loss = np.inf
         for epoch in range(start_epoch, max_epoch):
             self.train(epoch, max_epoch, trainloader, fixbase_epoch, open_layers, print_freq)
             
@@ -113,7 +115,14 @@ class Engine(object):
                     use_metric_cuhk03=use_metric_cuhk03,
                     ranks=ranks
                 )
-                self._save_checkpoint(epoch, val_loss, save_dir)
+                # If this is the best-performing model on the validation set, save it
+                if val_loss < best_loss:
+                    best_epoch = epoch
+                    best_loss = val_loss
+                    self._save_checkpoint(save_dir, epoch, is_best=True)
+
+            # Also save at the end of every epoch
+            self._save_checkpoint(save_dir, epoch, is_best=False)
 
             # Update learning rate scheduler
             if self.scheduler is not None:
@@ -121,6 +130,12 @@ class Engine(object):
                     self.scheduler.step(val_loss)
                 else:
                     self.scheduler.step()
+
+        # Now that training has finished, load the best model as self.model
+        print("Done training. Best model came at epoch", best_epoch, "with a validation loss of", best_loss)
+        checkpoint = torch.load(os.path.join(save_dir, "model-best.pth.tar"))
+        self.model.load_state_dict(checkpoint['state_dict'])
+        print("Loaded model weights from best model")
 
         if max_epoch > 0:
             print('=> Final test')
@@ -136,7 +151,6 @@ class Engine(object):
                 use_metric_cuhk03=use_metric_cuhk03,
                 ranks=ranks
             )
-            self._save_checkpoint(epoch, rank1, save_dir)
 
         elapsed = round(time.time() - time_start)
         elapsed = str(datetime.timedelta(seconds=elapsed))
@@ -370,10 +384,9 @@ class Engine(object):
         camids = data[2]
         return imgs, pids, camids
 
-    def _save_checkpoint(self, epoch, rank1, save_dir, is_best=False):
+    def _save_checkpoint(self, epoch, save_dir, is_best=False):
         save_checkpoint({
             'state_dict': self.model.state_dict(),
             'epoch': epoch + 1,
-            'rank1': rank1,
             'optimizer': self.optimizer.state_dict(),
         }, save_dir, is_best=is_best)

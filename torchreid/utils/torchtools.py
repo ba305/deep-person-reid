@@ -35,7 +35,6 @@ def save_checkpoint(state, save_dir, is_best=False, remove_module_from_keys=Fals
         >>> state = {
         >>>     'state_dict': model.state_dict(),
         >>>     'epoch': 10,
-        >>>     'rank1': 0.5,
         >>>     'optimizer': optimizer.state_dict()
         >>> }
         >>> save_checkpoint(state, 'log/my_model')
@@ -51,12 +50,11 @@ def save_checkpoint(state, save_dir, is_best=False, remove_module_from_keys=Fals
             new_state_dict[k] = v
         state['state_dict'] = new_state_dict
     # save
-    epoch = state['epoch']
-    fpath = osp.join(save_dir, 'model.pth.tar-' + str(epoch))
+    fpath = osp.join(save_dir, 'model.pth.tar')
+    if is_best:
+        fpath = osp.join(save_dir, 'model-best.pth.tar')
     torch.save(state, fpath)
     print('Checkpoint saved to "{}"'.format(fpath))
-    if is_best:
-        shutil.copy(fpath, osp.join(osp.dirname(fpath), 'model-best.pth.tar'))
 
 
 def load_checkpoint(fpath):
