@@ -384,7 +384,7 @@ class Engine(object):
         camids = data[2]
         return imgs, pids, camids
 
-    def _save_checkpoint(self, epoch, save_dir, is_best=False):
+    def _save_checkpoint(self, save_dir, epoch, is_best=False):
         save_checkpoint({
             'state_dict': self.model.state_dict(),
             'epoch': epoch + 1,
