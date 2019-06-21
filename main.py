@@ -5,6 +5,7 @@ import warnings
 import time
 import yaml
 import argparse
+import pathlib
 
 import torch
 import torch.nn as nn
@@ -86,6 +87,14 @@ def main():
     args = parser.parse_args()
     with open(args.config, "r") as ymlfile:
         config = yaml.load(ymlfile, Loader=yaml.FullLoader)
+
+    # Automatically add sub-folder name to config["save_dir"], with the same name
+    # as the config file. For example, config["save_dir"] is typically "logs",
+    # so this would change config["save_dir"] to "logs/exp01", for example, so that
+    # we don't need to change the save_dir in every single config file (it instead
+    # automatically generates it from the name of the config file).
+    experiment_number = pathlib.Path(args.config).stem
+    config["save_dir"] = os.path.join(config["save_dir"], experiment_number)
 
     # Set random seeds
     set_random_seed(config["seed"])
