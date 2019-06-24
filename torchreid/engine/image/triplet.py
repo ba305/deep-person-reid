@@ -9,7 +9,7 @@ import torch
 
 import torchreid
 from torchreid.engine import engine
-from torchreid.losses import CrossEntropyLoss, TripletLoss
+from torchreid.losses import CrossEntropyLoss, TripletLoss, TripletLossBatchAll
 from torchreid.utils import AverageMeter, open_specified_layers, open_all_layers
 from torchreid import metrics
 
@@ -82,6 +82,7 @@ class ImageTripletEngine(engine.Engine):
             use_gpu=self.use_gpu,
             label_smooth=label_smooth
         )
+        self.validation_criterion = TripletLossBatchAll(margin=margin)
 
     def train(self, epoch, max_epoch, trainloader, fixbase_epoch=0, open_layers=None, print_freq=10):
         losses_t = AverageMeter()

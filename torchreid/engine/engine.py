@@ -346,7 +346,7 @@ class Engine(object):
                 imgs = imgs.cuda()
                 pids = pids.cuda()
             features = self.model(imgs)
-            loss_t = self._compute_loss(self.criterion_t, features, pids)
+            loss_t = self._compute_loss(self.validation_criterion, features, pids)
 
             losses_t.update(loss_t.item(), pids.size(0))
 
