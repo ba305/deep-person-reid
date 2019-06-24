@@ -31,6 +31,8 @@ class TripletLoss(nn.Module):
         n = inputs.size(0)
         
         # Compute pairwise distance, replace by the official when merged
+        # Note: the top few lines of code below could be calculated with
+        # the scipy.spatial.distance.cdist function
         dist = torch.pow(inputs, 2).sum(dim=1, keepdim=True).expand(n, n)
         dist = dist + dist.t()
         dist.addmm_(1, -2, inputs, inputs.t())
