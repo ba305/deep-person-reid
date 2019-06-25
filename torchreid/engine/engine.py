@@ -45,7 +45,7 @@ class Engine(object):
             raise TypeError('model must be an instance of nn.Module')
 
     def run(self, save_dir='log', max_epoch=0, start_epoch=0, fixbase_epoch=0, open_layers=None,
-            start_eval=0, eval_freq=-1, test_only=False, print_freq=10,
+            start_eval=0, eval_freq=-1, test_only=False, print_freq=10, early_stop_patience=50,
             dist_metric='euclidean', normalize_feature=False, visrank=False, visrank_topk=20,
             use_metric_cuhk03=False, ranks=[1, 5, 10, 20], rerank=False):
         r"""A unified pipeline for training and evaluating a model.
@@ -64,6 +64,7 @@ class Engine(object):
             test_only (bool, optional): if True, only runs evaluation on test datasets.
                 Default is False.
             print_freq (int, optional): print_frequency. Default is 10.
+            early_stop_patience (int, optional): patience for early stopping. Default is 50 epochs
             dist_metric (str, optional): distance metric used to compute distance matrix
                 between query and gallery. Default is "euclidean".
             normalize_feature (bool, optional): performs L2 normalization on feature vectors before
@@ -110,6 +111,7 @@ class Engine(object):
 
         best_epoch = 0
         best_loss = np.inf
+        early_stop_counter = 0 # how many epochs without improving val_loss (for early stopping)
         for epoch in range(start_epoch, max_epoch):
             traindict = self.train(epoch, max_epoch, trainloader, fixbase_epoch, open_layers, print_freq)
 
@@ -127,10 +129,13 @@ class Engine(object):
                     ranks=ranks
                 )
                 # If this is the best-performing model on the validation set, save it
-                if val_loss < best_loss:
+                if val_loss <= best_loss:
                     best_epoch = epoch
                     best_loss = val_loss
+                    early_stop_counter = 0
                     self._save_checkpoint(save_dir, epoch, is_best=True)
+                else:
+                    early_stop_counter += 1
 
             # Also save at the end of every epoch
             self._save_checkpoint(save_dir, epoch, is_best=False)
@@ -141,6 +146,10 @@ class Engine(object):
                     [epoch+1, val_loss, traindict["loss_t"], traindict["loss_x"], traindict["train_acc"],
                      self.optimizer.param_groups[0]['lr']]
                 )
+
+            if early_stop_counter >= early_stop_patience:
+                print(f'Early stopping: validation loss has not improved in {early_stop_patience} epochs.')
+                break
 
             # Update learning rate scheduler
             if self.scheduler is not None:

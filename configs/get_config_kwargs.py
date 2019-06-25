@@ -102,5 +102,6 @@ def engine_run_kwargs(parsed_args):
         'visrank_topk': parsed_args["visrank_topk"],
         'use_metric_cuhk03': parsed_args["use_metric_cuhk03"],
         'ranks': parsed_args["ranks"],
-        'rerank': parsed_args["rerank"]
+        'rerank': parsed_args["rerank"],
+        'early_stop_patience': parsed_args["early_stop_patience"]
     }
