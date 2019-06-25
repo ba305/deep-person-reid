@@ -10,6 +10,7 @@ import numpy as np
 import csv
 import matplotlib.pyplot as plt
 import pandas as pd
+import tensorboardX
 
 import torch
 import torch.nn as nn
@@ -109,11 +110,20 @@ class Engine(object):
                  "train_acc_percent", "LR"]
             )
 
+        # Tensorboard
+        tensorboard_log_dir = os.path.join(save_dir, "tensorboard")
+        os.mkdir(tensorboard_log_dir)
+        tensorboard_writer = tensorboardX.SummaryWriter(tensorboard_log_dir)
+
         best_epoch = 0
         best_loss = np.inf
         early_stop_counter = 0 # how many epochs without improving val_loss (for early stopping)
         for epoch in range(start_epoch, max_epoch):
             traindict = self.train(epoch, max_epoch, trainloader, fixbase_epoch, open_layers, print_freq)
+
+            tensorboard_writer.add_scalar("train/triplet_loss", traindict["loss_t"], epoch+1)
+            tensorboard_writer.add_scalar("train/cross_entropy_loss", traindict["loss_x"], epoch+1)
+            tensorboard_writer.add_scalar("train/train_acc_percent", traindict["train_acc"], epoch+1)
 
             if (epoch+1)>=start_eval and eval_freq>0 and (epoch+1)%eval_freq==0:
                 val_loss = self.test(
@@ -128,6 +138,9 @@ class Engine(object):
                     use_metric_cuhk03=use_metric_cuhk03,
                     ranks=ranks
                 )
+
+                tensorboard_writer.add_scalar("val/triplet_loss", val_loss, epoch+1)
+
                 # If this is the best-performing model on the validation set, save it
                 if val_loss <= best_loss:
                     best_epoch = epoch
