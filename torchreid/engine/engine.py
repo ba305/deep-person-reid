@@ -7,6 +7,9 @@ import os.path as osp
 import time
 import datetime
 import numpy as np
+import csv
+import matplotlib.pyplot as plt
+import pandas as pd
 
 import torch
 import torch.nn as nn
@@ -97,12 +100,20 @@ class Engine(object):
         time_start = time.time()
         print('=> Start training')
 
+        # CSV file for saving training results
+        with open("{}/history.csv".format(save_dir), mode='a') as history_file:
+            history_writer = csv.writer(history_file)
+            history_writer.writerow(
+                ["epoch", "val_loss", "train_loss_triplet", "train_loss_cross_entropy",
+                 "train_acc_percent", "LR"]
+            )
+
         best_epoch = 0
         best_loss = np.inf
         for epoch in range(start_epoch, max_epoch):
-            self.train(epoch, max_epoch, trainloader, fixbase_epoch, open_layers, print_freq)
-            
-            if (epoch+1)>=start_eval and eval_freq>0 and (epoch+1)%eval_freq==0 and (epoch+1)!=max_epoch:
+            traindict = self.train(epoch, max_epoch, trainloader, fixbase_epoch, open_layers, print_freq)
+
+            if (epoch+1)>=start_eval and eval_freq>0 and (epoch+1)%eval_freq==0:
                 val_loss = self.test(
                     "validation",
                     epoch,
@@ -124,12 +135,39 @@ class Engine(object):
             # Also save at the end of every epoch
             self._save_checkpoint(save_dir, epoch, is_best=False)
 
+            with open("{}/history.csv".format(save_dir), mode='a') as history_file:
+                history_writer = csv.writer(history_file)
+                history_writer.writerow(
+                    [epoch+1, val_loss, traindict["loss_t"], traindict["loss_x"], traindict["train_acc"],
+                     self.optimizer.param_groups[0]['lr']]
+                )
+
             # Update learning rate scheduler
             if self.scheduler is not None:
                 if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     self.scheduler.step(val_loss)
                 else:
                     self.scheduler.step()
+
+        ### Save loss curves
+        df = pd.read_csv("{}/history.csv".format(save_dir))
+        epoch_count = range(1, np.max(df["epoch"]) + 1)
+
+        # Training/validation triplet loss
+        plt.plot(epoch_count, df["train_loss_triplet"], 'r--')
+        plt.plot(epoch_count, df["val_loss"], 'b-')
+        plt.legend(['Training Triplet Loss', 'Validation Triplet Loss'])
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.savefig(os.path.join(save_dir, "triplet_losses.png"), dpi=300)
+        plt.close()
+
+        # Training cross-entropy loss
+        plt.plot(epoch_count, df["train_loss_cross_entropy"], 'r--')
+        plt.legend(['Training cross-entropy loss'])
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.savefig(os.path.join(save_dir, "training_cross_entropy_loss.png"), dpi=300)
 
         # Now that training has finished, load the best model as self.model
         print("Done training. Best model came at epoch", best_epoch, "with a validation loss of", best_loss)
@@ -155,6 +193,7 @@ class Engine(object):
         elapsed = round(time.time() - time_start)
         elapsed = str(datetime.timedelta(seconds=elapsed))
         print('Elapsed {}'.format(elapsed))
+
 
     def train(self):
         r"""Performs training on source datasets for one epoch.
@@ -291,7 +330,7 @@ class Engine(object):
         print('Speed: {:.4f} sec/batch'.format(batch_time.avg))
 
         if normalize_feature:
-            print('Normalzing features with L2 norm ...')
+            print('Normalizing features with L2 norm ...')
             qf = F.normalize(qf, p=2, dim=1)
             gf = F.normalize(gf, p=2, dim=1)
 

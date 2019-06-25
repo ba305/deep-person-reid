@@ -5,3 +5,5 @@ Pillow
 six
 scipy
 pyyaml
+pandas
+matplotlib

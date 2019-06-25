@@ -146,3 +146,4 @@ class ImageTripletEngine(engine.Engine):
                 )
             
             end = time.time()
+        return {"loss_t": losses_t.avg, "loss_x": losses_x.avg, "train_acc": accs.avg}
