@@ -53,12 +53,16 @@ class TripletLossBatchAll(nn.Module):
         for i in range(n):
             pos = dist[i][mask[i] == 1]
             neg = dist[i][mask[i] == 0]
-            for p in pos:
-                for n in neg:
-                    dist_ap.append(p.unsqueeze(0))
-                    dist_an.append(n.unsqueeze(0))
-        dist_ap = torch.cat(dist_ap)
-        dist_an = torch.cat(dist_an)
+
+            num_pos, num_neg = len(pos), len(neg)
+
+            pos = pos.view(-1, 1).repeat(1, num_neg).view(1,-1).squeeze()
+            neg = neg.repeat(1, num_pos).squeeze()
+            dist_ap.extend(pos.tolist())
+            dist_an.extend(neg.tolist())
+
+        dist_ap = torch.tensor(dist_ap).cuda()
+        dist_an = torch.tensor(dist_an).cuda()
 
         # Compute ranking hinge loss
         y = torch.ones_like(dist_an)
