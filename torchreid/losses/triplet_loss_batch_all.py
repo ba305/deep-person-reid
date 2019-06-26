@@ -56,6 +56,9 @@ class TripletLossBatchAll(nn.Module):
 
             num_pos, num_neg = len(pos), len(neg)
 
+            # Find every possible pair between the positive and negatives, in order
+            # to make every possible triplet. This is equivalent to using a double
+            # for loop to loop through pos and neg, but faster.
             pos = pos.view(-1, 1).repeat(1, num_neg).view(1,-1).squeeze()
             neg = neg.repeat(1, num_pos).squeeze()
             dist_ap.extend(pos.tolist())
