@@ -5,7 +5,7 @@ from __future__ import division
 import torch
 import copy
 
-from torchreid.data.sampler import build_train_sampler, build_validation_sampler
+from torchreid.data.sampler import build_train_sampler
 from torchreid.data.transforms import build_transforms
 from torchreid.data.datasets import init_image_dataset, init_video_dataset
 
@@ -118,7 +118,7 @@ class ImageDataManager(DataManager):
     def __init__(self, root='', sources=None, targets=None, height=256, width=128, random_erase=False,
                  color_jitter=False, color_aug=False, use_cpu=False, split_id=0, combineall=False,
                  batch_size=32, workers=4, num_instances=4, train_sampler='', cuhk03_labeled=False,
-                 cuhk03_classic_split=False, market1501_500k=False, val_split=0.15, seed=None):
+                 cuhk03_classic_split=False, market1501_500k=False, val_split=0.15):
 
         super(ImageDataManager, self).__init__(sources=sources, targets=targets, height=height, width=width,
                                                random_erase=random_erase, color_jitter=color_jitter,
@@ -173,18 +173,9 @@ class ImageDataManager(DataManager):
         valset.mode = 'validation'
         valset.data = valset.validation
 
-        # Create validation sampler
-        val_sampler = build_validation_sampler(  # val loader uses same type of sampler as train set
-            valset.validation, train_sampler,
-            seed,
-            batch_size=batch_size,
-            num_instances=num_instances
-        )
-
         # Create data loader
         self.validationloader = torch.utils.data.DataLoader(
             valset,
-            sampler=val_sampler,
             batch_size=batch_size,
             shuffle=False,
             num_workers=workers,

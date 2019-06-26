@@ -401,15 +401,20 @@ class Engine(object):
 
         print('Checking performance on validation set ...')
 
+        all_features = torch.tensor([]).cuda()
+        all_pids = torch.tensor([])
         for batch_idx, data in enumerate(validationloader):
             imgs, pids = self._parse_data_for_train(data)
             if self.use_gpu:
                 imgs = imgs.cuda()
-                pids = pids.cuda()
             features = self.model(imgs)
-            loss_t = self._compute_loss(self.validation_criterion, features, pids)
+            all_features = torch.cat((all_features, features), dim=0)
+            all_pids = torch.cat((all_pids, pids.float()))
+        if self.use_gpu:
+            all_pids = all_pids.cuda()
 
-            losses_t.update(loss_t.item(), pids.size(0))
+        loss_t = self._compute_loss(self.validation_criterion, all_features, all_pids)
+        losses_t.update(loss_t.item(), pids.size(0))
 
         print()
         print('Validation results:')
