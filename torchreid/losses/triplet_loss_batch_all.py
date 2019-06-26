@@ -43,9 +43,15 @@ class TripletLossBatchAll(nn.Module):
         # For each anchor, find ALL combinations of triplets (i.e., all possible
         # groupings with a positive and a negative)
         mask = targets.expand(n, n).eq(targets.expand(n, n).t())
+
+        # Must ignore diagonals (set them equal to 7, which is just an arbitrary number)
+        # so that the anchor and positive will not be the exact same image
+        for i in range(len(dist)):
+            mask[i][i] = 7
+
         dist_ap, dist_an = [], []
         for i in range(n):
-            pos = dist[i][mask[i]]
+            pos = dist[i][mask[i] == 1]
             neg = dist[i][mask[i] == 0]
             for p in pos:
                 for n in neg:
