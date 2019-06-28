@@ -48,7 +48,7 @@ class Engine(object):
     def run(self, save_dir='log', max_epoch=0, start_epoch=0, fixbase_epoch=0, open_layers=None,
             start_eval=0, eval_freq=-1, test_only=False, print_freq=10, early_stop_patience=50,
             dist_metric='euclidean', normalize_feature=False, visrank=False, visrank_topk=20,
-            use_metric_cuhk03=False, ranks=[1, 5, 10, 20], rerank=False):
+            use_metric_cuhk03=False, ranks=[1, 5, 10, 20], rerank=False, warmup=10):
         r"""A unified pipeline for training and evaluating a model.
 
         Args:
@@ -80,6 +80,9 @@ class Engine(object):
             ranks (list, optional): cmc ranks to be computed. Default is [1, 5, 10, 20].
             rerank (bool, optional): uses person re-ranking (by Zhong et al. CVPR'17).
                 Default is False. This is only enabled when test_only=True.
+            warmup (int, optional): How many epochs to use as a "warmup" period. We will not begin
+                using the LR scheduler, early stopping, or tracking the "best model" according
+                to validation loss until AFTER the warmup period has ended. Default is 10.
         """
         trainloader, testloader, validationloader = self.datamanager.return_dataloaders()
 
@@ -141,14 +144,15 @@ class Engine(object):
 
                 tensorboard_writer.add_scalar("val/triplet_loss", val_loss, epoch+1)
 
-                # If this is the best-performing model on the validation set, save it
-                if val_loss <= best_loss:
-                    best_epoch = epoch
-                    best_loss = val_loss
-                    early_stop_counter = 0
-                    self._save_checkpoint(save_dir, epoch, is_best=True)
-                else:
-                    early_stop_counter += 1
+                if epoch >= warmup:
+                    # If this is the best-performing model on the validation set, save it
+                    if val_loss <= best_loss:
+                        best_epoch = epoch
+                        best_loss = val_loss
+                        early_stop_counter = 0
+                        self._save_checkpoint(save_dir, epoch, is_best=True)
+                    else:
+                        early_stop_counter += 1
 
             # Also save at the end of every epoch
             self._save_checkpoint(save_dir, epoch, is_best=False)
@@ -164,12 +168,13 @@ class Engine(object):
                 print(f'Early stopping: validation loss has not improved in {early_stop_patience} epochs.')
                 break
 
-            # Update learning rate scheduler
-            if self.scheduler is not None:
-                if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                    self.scheduler.step(val_loss)
-                else:
-                    self.scheduler.step()
+            if epoch >= warmup:
+                # Update learning rate scheduler
+                if self.scheduler is not None:
+                    if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                        self.scheduler.step(val_loss)
+                    else:
+                        self.scheduler.step()
 
         ### Save loss curves
         df = pd.read_csv("{}/history.csv".format(save_dir))

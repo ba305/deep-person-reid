@@ -101,5 +101,6 @@ def engine_run_kwargs(parsed_args):
         'use_metric_cuhk03': parsed_args["use_metric_cuhk03"],
         'ranks': parsed_args["ranks"],
         'rerank': parsed_args["rerank"],
-        'early_stop_patience': parsed_args["early_stop_patience"]
+        'early_stop_patience': parsed_args["early_stop_patience"],
+        'warmup': parsed_args["warmup"]
     }
