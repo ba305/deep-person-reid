@@ -102,5 +102,6 @@ def engine_run_kwargs(parsed_args):
         'ranks': parsed_args["ranks"],
         'rerank': parsed_args["rerank"],
         'early_stop_patience': parsed_args["early_stop_patience"],
-        'warmup': parsed_args["warmup"]
+        'warmup': parsed_args["warmup"],
+        'warmup_best_model': parsed_args["warmup_best_model"]
     }

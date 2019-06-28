@@ -48,7 +48,8 @@ class Engine(object):
     def run(self, save_dir='log', max_epoch=0, start_epoch=0, fixbase_epoch=0, open_layers=None,
             start_eval=0, eval_freq=-1, test_only=False, print_freq=10, early_stop_patience=50,
             dist_metric='euclidean', normalize_feature=False, visrank=False, visrank_topk=20,
-            use_metric_cuhk03=False, ranks=[1, 5, 10, 20], rerank=False, warmup=10):
+            use_metric_cuhk03=False, ranks=[1, 5, 10, 20], rerank=False, warmup=10,
+            warmup_best_model=10):
         r"""A unified pipeline for training and evaluating a model.
 
         Args:
@@ -81,8 +82,10 @@ class Engine(object):
             rerank (bool, optional): uses person re-ranking (by Zhong et al. CVPR'17).
                 Default is False. This is only enabled when test_only=True.
             warmup (int, optional): How many epochs to use as a "warmup" period. We will not begin
-                using the LR scheduler, early stopping, or tracking the "best model" according
-                to validation loss until AFTER the warmup period has ended. Default is 10.
+                using the LR scheduler or early stopping until AFTER the warmup period has ended.
+                Default is 10.
+            warmup_best_model (int, optional): How many epochs to use as a "warmup" period before
+                beginning to track/save the "best model" according to validation loss
         """
         trainloader, testloader, validationloader = self.datamanager.return_dataloaders()
 
@@ -128,7 +131,7 @@ class Engine(object):
             tensorboard_writer.add_scalar("train/cross_entropy_loss", traindict["loss_x"], epoch+1)
             tensorboard_writer.add_scalar("train/train_acc_percent", traindict["train_acc"], epoch+1)
 
-            if (epoch+1)>=start_eval and eval_freq>0 and (epoch+1)%eval_freq==0:
+            if (epoch+1) >= start_eval and eval_freq > 0 and (epoch+1) % eval_freq == 0:
                 val_loss = self.test(
                     "validation",
                     epoch,
@@ -144,13 +147,14 @@ class Engine(object):
 
                 tensorboard_writer.add_scalar("val/triplet_loss", val_loss, epoch+1)
 
+                # Early stopping, and saving best model
                 if epoch >= warmup:
-                    # If this is the best-performing model on the validation set, save it
                     if val_loss <= best_loss:
                         best_epoch = epoch
                         best_loss = val_loss
                         early_stop_counter = 0
-                        self._save_checkpoint(save_dir, epoch, is_best=True)
+                        if epoch >= warmup_best_model:
+                            self._save_checkpoint(save_dir, epoch, is_best=True)
                     else:
                         early_stop_counter += 1
 
