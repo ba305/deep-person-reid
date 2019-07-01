@@ -48,8 +48,7 @@ class Engine(object):
     def run(self, save_dir='log', max_epoch=0, start_epoch=0, fixbase_epoch=0, open_layers=None,
             start_eval=0, eval_freq=-1, test_only=False, print_freq=10, early_stop_patience=50,
             dist_metric='euclidean', normalize_feature=False, visrank=False, visrank_topk=20,
-            use_metric_cuhk03=False, ranks=[1, 5, 10, 20], rerank=False, warmup=10,
-            warmup_best_model=10):
+            use_metric_cuhk03=False, ranks=[1, 5, 10, 20], rerank=False, warmup=10):
         r"""A unified pipeline for training and evaluating a model.
 
         Args:
@@ -84,8 +83,6 @@ class Engine(object):
             warmup (int, optional): How many epochs to use as a "warmup" period. We will not begin
                 using the LR scheduler or early stopping until AFTER the warmup period has ended.
                 Default is 10.
-            warmup_best_model (int, optional): How many epochs to use as a "warmup" period before
-                beginning to track/save the "best model" according to validation loss
         """
         trainloader, testloader, validationloader = self.datamanager.return_dataloaders()
 
@@ -153,8 +150,7 @@ class Engine(object):
                         best_epoch = epoch
                         best_loss = val_loss
                         early_stop_counter = 0
-                        if epoch >= warmup_best_model:
-                            self._save_checkpoint(save_dir, epoch, is_best=True)
+                        self._save_checkpoint(save_dir, epoch, is_best=True)
                     else:
                         early_stop_counter += 1
 
