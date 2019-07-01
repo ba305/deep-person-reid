@@ -81,8 +81,8 @@ class Engine(object):
             rerank (bool, optional): uses person re-ranking (by Zhong et al. CVPR'17).
                 Default is False. This is only enabled when test_only=True.
             warmup (int, optional): How many epochs to use as a "warmup" period. We will not begin
-                using the LR scheduler or early stopping until AFTER the warmup period has ended.
-                Default is 10.
+                using the LR scheduler, or using early stopping, or saving the "best model" (according
+                to validation loss) until AFTER the warmup period has ended. Default is 10.
         """
         trainloader, testloader, validationloader = self.datamanager.return_dataloaders()
 
