@@ -1,0 +1,115 @@
+###### Basic
+app: image              # choices=['image', 'video']
+loss: triplet           # choices=['softmax', 'triplet']
+
+###### Datasets
+root: data
+sources:                # can choose more than one
+  - market1501
+targets:
+  - market1501          # can choose more than one
+workers: 4
+split_id: 0
+height: 256
+width: 128
+train_sampler: RandomIdentitySampler
+combineall: false
+val_split: 0.15
+
+###### Data augmentation
+random_erase: true
+color_jitter: false
+color_aug: false
+
+###### Video datasets
+seq_len: 15
+sample_method: evenly
+pooling_method: avg     # choices=['avg', 'max']
+
+###### Dataset-specific setting
+cuhk03_labeled: false
+cuhk03_classic_split: false
+use_metric_cuhk03: false
+market1501_500k: false
+
+###### Optimization options
+optim: adam
+lr: 0.0003
+weight_decay: 0.0005
+# SGD
+momentum: 0.9
+sgd_dampening: 0
+sgd_nesterov: false
+# RMSProp
+rmsprop_alpha: 0.99
+# adam/amsgrad
+adam_beta1: 0.9
+adam_beta2: 0.999
+
+###### Training hyperparameters
+max_epoch: 500
+start_epoch: 0
+batch_size: 120
+
+warmup: 15
+
+early_stop_patience: 50
+
+fixbase_epoch: 0
+open_layers:            # can choose more than one
+  - classifier
+staged_lr: false
+new_layers:             # can choose more than one
+  - classifier
+base_lr_mult: 0.1
+
+###### Learning rate scheduler options
+lr_scheduler: reduce_on_plateau
+gamma: 0.1
+# multi_step
+stepsize:               # can choose more than one
+  - 60
+  - 80
+# reduce on plateau
+lr_sched_patience: 15
+lr_sched_threshold: 0.0001
+lr_sched_cooldown: 3
+
+
+###### Cross entropy loss
+label_smooth: true
+
+###### Hard triplet loss
+margin: 0.3
+num_instances: 4
+weight_t: 0.4
+weight_x: 0.6
+
+###### Architecture
+arch: resnet50
+no_pretrained: false
+
+###### Test settings
+load_weights: ''
+evaluate: false
+eval_freq: 1
+start_eval: 0
+dist_metric: euclidean
+normalize_feature: true
+ranks:
+  - 1
+  - 5
+  - 10
+  - 20
+rerank: false
+visrank: false
+visrank_topk: 20
+
+###### Miscellaneous
+print_freq: 20
+seed: 1
+resume: ''
+save_dir: logs
+use_cpu: false
+gpu_devices: '0'
+use_avai_gpus: false
