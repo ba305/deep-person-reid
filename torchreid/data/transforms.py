@@ -150,7 +150,7 @@ def build_transforms(height, width, random_erase=False, color_jitter=False,
 
     # build train transformations
     transform_tr = []
-    transform_tr += [Random2DTranslation(height, width)]
+    transform_tr += [Resize(height, width)]
     transform_tr += [RandomHorizontalFlip()]
     if color_jitter:
         transform_tr += [ColorJitter(brightness=0.2, contrast=0.15, saturation=0, hue=0)]
