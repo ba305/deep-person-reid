@@ -6,5 +6,5 @@ from .engine import Engine
 from .image import ImageSoftmaxEngine
 from .image import ImageTripletEngine
 
-# from .video import VideoSoftmaxEngine
-# from .video import VideoTripletEngine
+from .DEPRECATED_video import VideoSoftmaxEngine
+from .DEPRECATED_video import VideoTripletEngine
