@@ -3,7 +3,7 @@ Torchreid--for training re-ID models
 
 Note from Ben: 
 ^^^^^^^^^^^^^^^^^^^^^^^^
-If you scroll down to the next section, you will find the original README provided by Kaiyang Zhou. I have made a number of changes to the original repo, but I decided to leave the original README contents, since they are still useful. Here, I am including some of my own comments, so that I can explain what I changed.
+If you scroll down for a while, to the next major section, you will find the original README provided by Kaiyang Zhou. I've made a number of changes to the original repo, but I decided to leave the original README contents below, since they are still useful. However, in this first section, I am including some of my own comments, so that I can explain what I changed, and how the repo is now different than the original.
 
 **Main changes implemented by Ben**:
 
@@ -19,14 +19,14 @@ If you scroll down to the next section, you will find the original README provid
 
 **KEY POINTS (PLEASE read this section before using this repo!!!!!)**:
 
-- After all the changes I made, I believe this only works for the image analysis scripts (as opposed to video ones). This is probably not a problem because the video methods in this repo use tracklets, which may not actually be helpful for us. Anyway, do not use the video scripts unless you make all of the necessary changes.
-- Likewise, this repo now only works for the triplet loss scripts, NOT the softmax ones. You would have to add all the changes I made in triplet.py (and related files) to softmax.py (and related files). However, rather than doing that, I believe you can also continue using the triplet script, but set weight_t to 0 and weight_x to 1 in the config file, which technically calculates both softmax and triplet loss, but then just weights the triplet loss as 0, effectively ignoring it (I haven't tested this out, but I believe it should work that way).
+- While modifying the repo, I only modified the code that is relevant to image analysis (as opposed to video analysis). For my project, I did not need this particular video code (since the video methods in this repo use tracklets, which was not relevant for my particular task), so I did not update the video code. So, do not use the video scripts unless you make all of the necessary changes.
+- Likewise, this repo now only works for the triplet loss scripts, NOT the softmax ones. You would have to add all the changes I made in triplet.py (and related files) to softmax.py (and related files). However, rather than doing that, I believe you can also continue using the triplet script, but set weight_t to 0 and weight_x to 1 in the config file, which technically calculates both softmax and triplet loss, but then just weights the triplet loss as 0, effectively ignoring it (I haven't tested this out, but I believe it should work that way). As I will explain below, the validation set only works when triplet loss is used, so I haven't been using the softmax setting (you probably shouldn't either, unless you DO NOT WANT any validation results), and thus did not update that code.
 - To summarize the two bullet points above: in the config file, leave the top two settings ('app' and 'loss') as they are currently set ('image' and 'triplet'), unless you modify other files to bring everything up to date.
-- I have also marked some folders and/or files as "DEPRECATED" in the file name, in which case they are deprecated and would need to be udpated if you still wanted to use them
+- I have also marked some folders and/or files as "DEPRECATED" in the file name, in which case they are deprecated and would need to be udpated if you still wanted to use them.
 
 What else has become deprecated?
 
-- Since I added the validation set, it potentially may have interfered with some of the 
+- Because I added the validation set, it may have interfered with some of the other features in the original repo, mainly relating to config parameters in the "Datasets" section of the config file. Specifically, I believe the "combineall" functionality (which originally combined training + test data into one large training set) may no longer work. My project does not require this functionality, so I haven't tested it, but I would recommend examining the code first if you need this functionality (if I have time, I will examine this in the future). Additionally, the original repo allows you to choose multiple training datasets to combine (in the "sources" setting) as well as multiple testing datasets to combine (in the "targets" setting). I haven't needed to combine multiple datasets, so I haven't tested this either, but I think this may not work anymore, due to the introduction of the validation set. Again, if I have time I will check on this, but to be safe, please examine the code yourself if you need this functionality. Otherwise, just use a single dataset.
 
 Other comments:
 
@@ -39,30 +39,57 @@ As mentioned above, I converted the argparse flags into a yaml config file, so t
 
 So, for each of the options below, you simply need to provide your preferred settings in the config file, then run the "main.py" file in the command line, providing just the file path to the config file.
 
-Option 1: train a new model
+*Option 1: train a new model*
 
 Let's assume we are using config.py, which is located in the configs/ directory. 
 
-- Choose your preferred architecture (under 'arch')
+- Leave the majority of the settings as they are in config.py
+- Choose your preferred architecture (the 'arch' setting). You can use the following python code to see the names of the available models:
+
+.. code-block:: python
+    
+    import torchreid
+    torchreid.models.show_avai_models()
+
+- Make sure to set the save_dir parameter to whichever folder you want to save the results to
+- Set val_split to the percentage of the training set that you want to use as the validation set
+- Set various training hyperparameters such as the optimizer, max_epoch, warmup period, LR scheduler, etc.
+- Batch size is an important setting. When using hard triplet mining, having a larger batch size is better (to allow for harder triplets). So try to set the largest possible batch size without exceeding the GPU memory. (Note: I believe the batch size should be a multiple of num_instances, which is the number of images used per person)
+- Setting weight_t and weight_x is important (the weights for triplet vs. cross-entropy loss). This is a scaling factor that needs to be tuned.
+- For the most part, all of the other settings should be left as they are in config.py, at least for the Quick Start, if you are just trying to get the model to run. Of course, later on, feel free to try changing different settings.
+
+Finally, run the following command in the command line. (Change the file path if you have a different config file).
 
 .. code-block:: bash
     
-    python main.py --config configs/config.py
+    python main.py --config configs/config.yml
 
 
-Option 2: resume training a model that you have stored on your computer
+*Option 2: resume training from a checkpoint*
 
-Provide a file path to the "resume" setting in the config file
+- Similar to Option 1, but you must also provide a file path (to a saved checkpoint) to the "resume" setting in the config file
+- Then run the same command in the command line:
 
-Option 3: evaluate a trained model
+.. code-block:: bash
+    
+    python main.py --config configs/config.yml
 
-This is very similar to training a new model. The main difference is that in the config file, you should set "evaluate" to "true" (this tells the engine that you ONLY want to evaluate, not train). Also, you should provide a file path to model weights in the "load_weights" setting.
+*Option 3: evaluate a trained model*
+
+- This is very similar to training a new model. The main difference is that in the config file, you should set "evaluate" to "true" (this tells the engine that you ONLY want to evaluate, not train). Also, you should provide a file path to model weights in the "load_weights" setting.
+- Then run the same command in the command line, as usual:
+
+.. code-block:: bash
+    
+    python main.py --config configs/config.yml
 
 **Other assorted notes about config parameters**
 
 - When using triplet loss (i.e., when you set "loss: triplet"), you must set "train_sampler: RandomIdentitySampler" because RandomIdentitySampler performs triplet mining/sampling.
 - val_split indicates what % of the TRAINING set you want to split off to use as the validation set (the test set is not modified, so that the test results can be compared with prior work in the literature)
-- 
+- save_dir: the directory where you want to save the training results
+
+Finally, please also see https://kaiyangzhou.github.io/deep-person-reid/, which is the original documentation website provided by Kaiyang Zhou. It has a lot of useful information, as well as the Model Zoo, which contains pre-trained models that can be downloaded. Obviously, the website doesn't incorporate the changes that I made, but it still has a lot of useful info.
 
 Original README from Kaiyang Zhou:
 ^^^^^^^^^^^^^^^^^^^^^^^^
