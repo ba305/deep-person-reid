@@ -15,7 +15,7 @@ If you scroll down for a while, to the next major section, you will find the ori
 - Save loss curves at the end of training
 - Tensorboard support
 - Warmup period for LR scheduler, early stopping, and saving best model
-- *Note that because of the changes above, some other parts of this repo may have been broken. See below for further details.*
+- *Note that because of the changes above, some other parts of this repo are now deprecated. See below for further details.*
 
 **KEY POINTS (PLEASE read this section before using this repo!!!!!)**:
 
@@ -30,7 +30,7 @@ What else has become deprecated?
 
 Other comments:
 
-- Due to the problem structure, the validation loss ONLY incorporates triplet loss (because the validation cross-entropy loss cannot be calculated, since the FC layers in the model are designed for the training classes, not the validation classes), and does NOT include the cross-entropy loss. In contrast, the training loss is the sum of triplet and cross-entropy losses (weighted by weight_t and weight_x). So, unfortunately, there is a disconnect between the training and validation losses, which may affect how your model is trained.
+- Due to the problem structure, the validation loss ONLY incorporates triplet loss (because the validation cross-entropy loss cannot be calculated, since the FC layers in the model are designed for the training classes, not the validation classes), and does NOT include the cross-entropy loss. In contrast, the training loss is the sum of triplet and cross-entropy losses (weighted by weight_t and weight_x). So, unfortunately, there is a disconnect between the training and validation losses, which may affect how your model is trained. For example, this potentially may reduce the effectiveness of something like ReduceLROnPlateau, since that LR scheduler is based only on validation loss (triplet only).
 - During training, triplets are sampled using "batch hard" approach, to mine for moderately hard triplets. During validation, triplets are sampled using the "batch all" approach, in order to get more accurate and stable results between different model runs. For more info on "batch hard" vs. "batch all," see https://arxiv.org/abs/1703.07737
 
 **QUICKSTART GUIDE**:
