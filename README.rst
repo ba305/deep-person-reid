@@ -76,7 +76,12 @@ Finally, run the following command in the command line. (Change the file path if
 
 *Option 3: evaluate a trained model*
 
-This is very similar to training a new model. The main difference is that in the config file, you should set "evaluate" to "true" (this tells the engine that you ONLY want to evaluate, not train). Also, you should provide a file path to model weights in the "load_weights" setting.
+- This is very similar to training a new model. The main difference is that in the config file, you should set "evaluate" to "true" (this tells the engine that you ONLY want to evaluate, not train). Also, you should provide a file path to model weights in the "load_weights" setting.
+- Then run the same command in the command line, as usual:
+
+.. code-block:: bash
+    
+    python main.py --config configs/config.yml
 
 **Other assorted notes about config parameters**
 
