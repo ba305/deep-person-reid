@@ -4,6 +4,7 @@ from __future__ import division
 import torch
 import torch.nn as nn
 
+## This script was added by Ben, to be used during validation (instead of using hard triplet mining, since that's only necessary during training)
 
 class TripletLossBatchAll(nn.Module):
     """Triplet loss WITHOUT hard positive/negative mining (i.e., "batch all" rather than
