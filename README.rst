@@ -27,7 +27,7 @@ If you scroll down to the next section, you will find the original README provid
 
 **QUICKSTART GUIDE**:
 
-Original README:
+Original README from Kaiyang Zhou:
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Torchreid is a library built on `PyTorch <https://pytorch.org/>`_ for deep-learning person re-identification.
