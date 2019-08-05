@@ -1,4 +1,5 @@
-# This is the most up-to-date config file.
+# This is the most up-to-date config file
+# see default_parser.py for more information on some of the settings
 
 
 
@@ -21,7 +22,7 @@ combineall: false
 val_split: 0.15
 
 ###### Data augmentation
-random_erase: true
+random_erase: false
 color_jitter: false
 color_aug: false
 
@@ -90,7 +91,7 @@ weight_t: 0.4
 weight_x: 0.6
 
 ###### Architecture
-arch: resnet50
+arch: osnet_x1_0
 no_pretrained: false
 
 ###### Test settings
