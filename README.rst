@@ -1,11 +1,11 @@
-Torchreid
+Torchreid--for training re-ID models
 ===========
 
-NOTE FROM BEN: 
+Note from Ben: 
 ^^^^^^^^^^^^^^^^^^^^^^^^
 If you scroll down to the next section, you will find the original README provided by Kaiyang Zhou. I have made a number of changes to the original repo, but I decided to leave the original README contents, since they are still useful. Here, I am including some of my own comments, so that I can explain what I changed.
 
-**MAIN CHANGES IMPLEMENTED BY BEN**:
+**Main changes implemented by Ben**:
 
 - Added a validation set
 - New learning rate scheduler (ReduceLROnPLateau)
