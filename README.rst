@@ -26,7 +26,7 @@ If you scroll down for a while, to the next major section, you will find the ori
 
 What else has become deprecated?
 
-- Since I added the validation set, it potentially may have interfered with some of the 
+- Because I added the validation set, it may have interfered with some of the other features in the original repo, mainly relating to config parameters in the "Datasets" section of the config file. Specifically, I believe the "combineall" functionality (which originally combined training + test data into one large training set) may no longer work. My project does not require this functionality, so I haven't tested it, but I would recommend examining the code first if you need this functionality (if I have time, I will examine this in the future). Additionally, the original repo allows you to choose multiple training datasets to combine (in the "sources" setting) as well as multiple testing datasets to combine (in the "targets" setting). I haven't needed to combine multiple datasets, so I haven't tested this either, but I think this may not work anymore, due to the introduction of the validation set. Again, if I have time I will check on this, but to be safe, please examine the code yourself if you need this functionality. Otherwise, just use a single dataset.
 
 Other comments:
 
