@@ -5,7 +5,7 @@ NOTE FROM BEN:
 ^^^^^^^^^^^^^^^^^^^^^^^^
 If you scroll down to the next section, you will find the original README provided by Kaiyang Zhou. I have made a number of changes to the original repo, but I decided to leave the original README contents, since they are still useful. Here, I am including some of my own comments, so that I can explain what I changed.
 
-MAIN CHANGES IMPLEMENTED BY BEN:
+**MAIN CHANGES IMPLEMENTED BY BEN**:
 
 - Added a validation set
 - New learning rate scheduler (ReduceLROnPLateau)
@@ -16,7 +16,7 @@ MAIN CHANGES IMPLEMENTED BY BEN:
 - Tensorboard support
 - Warmup period for LR scheduler, early stopping, and saving best model
 
-KEY POINTS (PLEASE read this section before using this repo!!!!!):
+**KEY POINTS (PLEASE read this section before using this repo!!!!!)**:
 
 - After all the changes I made, I believe this only works for the image analysis scripts (as opposed to video ones). This is probably not a problem because the video methods in this repo use tracklets, which may not actually be helpful for us. Anyway, do not use the video scripts unless you make all of the necessary changes.
 - Likewise, this repo now only works for the triplet loss scripts, NOT the softmax ones. You would have to add all the changes I made in triplet.py (and related files) to softmax.py (and related files). However, rather than doing that, I believe you can also continue using the triplet script, but set weight_t to 0 and weight_x to 1 in the config file, which technically calculates both softmax and triplet loss, but then just weights the triplet loss as 0, effectively ignoring it (I haven't tested this out, but I believe it should work that way).
@@ -25,7 +25,7 @@ KEY POINTS (PLEASE read this section before using this repo!!!!!):
 - Due to the problem structure, the validation loss ONLY incorporates triplet loss (because the validation cross-entropy loss cannot be calculated, since the FC layers in the model are designed for the training classes, not the validation classes), and does NOT include the cross-entropy loss. In contrast, the training loss is the sum of triplet and cross-entropy losses (weighted by weight_t and weight_x). So, unfortunately, there is a disconnect between the training and validation losses, which may affect how your model is trained.
 - During training, triplets are sampled using "batch hard" approach, to mine for moderately hard triplets. During validation, triplets are sampled using the "batch all" approach, in order to get more accurate and stable results between different model runs. For more info on "batch hard" vs. "batch all," see https://arxiv.org/abs/1703.07737
 
-
+**QUICKSTART GUIDE**:
 
 Original README:
 ^^^^^^^^^^^^^^^^^^^^^^^^
