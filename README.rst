@@ -62,12 +62,17 @@ Finally, run the following command in the command line. (Change the file path if
 
 .. code-block:: bash
     
-    python main.py --config configs/config.py
+    python main.py --config configs/config.yml
 
 
-*Option 2: resume training a model that you have stored on your computer*
+*Option 2: resume training from a checkpoint*
 
-Provide a file path to the "resume" setting in the config file
+- Similar to Option 1, but you must also provide a file path (to a saved checkpoint) to the "resume" setting in the config file
+- Then run the same command in the command line:
+
+.. code-block:: bash
+    
+    python main.py --config configs/config.yml
 
 *Option 3: evaluate a trained model*
 
@@ -78,6 +83,8 @@ This is very similar to training a new model. The main difference is that in the
 - When using triplet loss (i.e., when you set "loss: triplet"), you must set "train_sampler: RandomIdentitySampler" because RandomIdentitySampler performs triplet mining/sampling.
 - val_split indicates what % of the TRAINING set you want to split off to use as the validation set (the test set is not modified, so that the test results can be compared with prior work in the literature)
 - save_dir: the directory where you want to save the training results
+
+Finally, please also see https://kaiyangzhou.github.io/deep-person-reid/, which is the original documentation website provided by Kaiyang Zhou. It has a lot of useful information, as well as the Model Zoo, which contains pre-trained models that can be downloaded. Obviously, the website doesn't incorporate the changes that I made, but it still has a lot of useful info.
 
 Original README from Kaiyang Zhou:
 ^^^^^^^^^^^^^^^^^^^^^^^^
