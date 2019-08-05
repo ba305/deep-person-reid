@@ -11,21 +11,58 @@ If you scroll down to the next section, you will find the original README provid
 - New learning rate scheduler (ReduceLROnPLateau)
 - Early stopping (based on validation loss)
 - Converted argparse flags into a yaml config file
-- Saves key results to CSV file
-- Saves loss curves at the end of training
+- Save results to CSV file (called "history.csv")
+- Save loss curves at the end of training
 - Tensorboard support
 - Warmup period for LR scheduler, early stopping, and saving best model
+- *Note that because of the changes above, some other parts of this repo may have been broken. See below for further details.*
 
 **KEY POINTS (PLEASE read this section before using this repo!!!!!)**:
 
 - After all the changes I made, I believe this only works for the image analysis scripts (as opposed to video ones). This is probably not a problem because the video methods in this repo use tracklets, which may not actually be helpful for us. Anyway, do not use the video scripts unless you make all of the necessary changes.
 - Likewise, this repo now only works for the triplet loss scripts, NOT the softmax ones. You would have to add all the changes I made in triplet.py (and related files) to softmax.py (and related files). However, rather than doing that, I believe you can also continue using the triplet script, but set weight_t to 0 and weight_x to 1 in the config file, which technically calculates both softmax and triplet loss, but then just weights the triplet loss as 0, effectively ignoring it (I haven't tested this out, but I believe it should work that way).
 - To summarize the two bullet points above: in the config file, leave the top two settings ('app' and 'loss') as they are currently set ('image' and 'triplet'), unless you modify other files to bring everything up to date.
+- I have also marked some folders and/or files as "DEPRECATED" in the file name, in which case they are deprecated and would need to be udpated if you still wanted to use them
+
+What else has become deprecated?
+
+- Since I added the validation set, it potentially may have interfered with some of the 
+
+Other comments:
 
 - Due to the problem structure, the validation loss ONLY incorporates triplet loss (because the validation cross-entropy loss cannot be calculated, since the FC layers in the model are designed for the training classes, not the validation classes), and does NOT include the cross-entropy loss. In contrast, the training loss is the sum of triplet and cross-entropy losses (weighted by weight_t and weight_x). So, unfortunately, there is a disconnect between the training and validation losses, which may affect how your model is trained.
 - During training, triplets are sampled using "batch hard" approach, to mine for moderately hard triplets. During validation, triplets are sampled using the "batch all" approach, in order to get more accurate and stable results between different model runs. For more info on "batch hard" vs. "batch all," see https://arxiv.org/abs/1703.07737
 
 **QUICKSTART GUIDE**:
+
+As mentioned above, I converted the argparse flags into a yaml config file, so that no matter what you want to do, you only need to modify the config file. This allows you to have a new config file for each "experiment," making it easier to document previous runs.
+
+So, for each of the options below, you simply need to provide your preferred settings in the config file, then run the "main.py" file in the command line, providing just the file path to the config file.
+
+Option 1: train a new model
+
+Let's assume we are using config.py, which is located in the configs/ directory. 
+
+- Choose your preferred architecture (under 'arch')
+
+.. code-block:: bash
+    
+    python main.py --config configs/config.py
+
+
+Option 2: resume training a model that you have stored on your computer
+
+Provide a file path to the "resume" setting in the config file
+
+Option 3: evaluate a trained model
+
+This is very similar to training a new model. The main difference is that in the config file, you should set "evaluate" to "true" (this tells the engine that you ONLY want to evaluate, not train). Also, you should provide a file path to model weights in the "load_weights" setting.
+
+**Other assorted notes about config parameters**
+
+- When using triplet loss (i.e., when you set "loss: triplet"), you must set "train_sampler: RandomIdentitySampler" because RandomIdentitySampler performs triplet mining/sampling.
+- val_split indicates what % of the TRAINING set you want to split off to use as the validation set (the test set is not modified, so that the test results can be compared with prior work in the literature)
+- 
 
 Original README from Kaiyang Zhou:
 ^^^^^^^^^^^^^^^^^^^^^^^^
